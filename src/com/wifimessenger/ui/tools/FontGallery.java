@@ -26,10 +26,8 @@ public class FontGallery {
                     try {
                         String fontName = file.getName().substring(0, file.getName().lastIndexOf('.')).toLowerCase();
                         Font font = Font.createFont(Font.TRUETYPE_FONT, file).deriveFont(12f); // Change the font size as needed
-                        System.out.println(fontName);
                         putFont(fontName, font);
                     } catch (IOException | FontFormatException e) {
-                        // Handle exceptions accordingly
                         e.printStackTrace();
                     }
                 }
@@ -50,7 +48,7 @@ public class FontGallery {
             return selectedFont.deriveFont(style, size);
         } else {
             // Return a default font or handle the missing font case
-            System.err.println("Could find font type " + name);
+            System.err.println("Couldn't find font type " + name);
             return new Font("Arial", style, size);
         }
     }

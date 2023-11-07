@@ -1,7 +1,11 @@
 import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
+import com.wifimessenger.ui.ClientApp.ProfileIcon;
+import com.wifimessenger.ui.ClientApp;
 import com.wifimessenger.ui.ServerApp;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 
 public class DevMain {
@@ -56,8 +60,20 @@ public class DevMain {
         ch.startListening();
     }
 
+    public void testProfileIcon(){
+        JFrame frame = new JFrame();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel.setBorder(BorderFactory.createEmptyBorder(40,40,40,40));
+        panel.add(new ClientApp().getTestTile());
+        panel.setMaximumSize(new Dimension(200,100));
+        frame.setSize(400,400);
+        frame.add(panel);
+
+        frame.setVisible(true);
+    }
+
     public static void main(String[] args) {
-        new DevMain().runServer();
+        new DevMain().testProfileIcon();
     }
 
 }

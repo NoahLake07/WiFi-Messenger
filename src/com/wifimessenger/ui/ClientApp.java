@@ -3,15 +3,19 @@ package com.wifimessenger.ui;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
+import com.wifimessenger.system.data.Conversation;
 import com.wifimessenger.ui.tools.FontGallery;
 import com.wifimessenger.ui.tools.UIResource;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
-import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,6 +34,9 @@ public class ClientApp extends JFrame {
 
     // * UI PANELS
     JPanel setupPanel, connectPanel; // for user setup
+    JSplitPane splitPane; // for app
+    ConversationPanel conversationSelectorPanel;
+    ChatPanel chatPanel;
 
     public ClientApp(File json){
         // todo instantiate via json (clientId, username, ipAddress, pathOfMessageHistory)
@@ -58,7 +65,7 @@ public class ClientApp extends JFrame {
             welcomeLbl.setHorizontalAlignment(SwingConstants.CENTER);
 
             JLabel actionLbl = new JLabel("Click the button below to get started.");
-            actionLbl.setFont(FontGallery.getFont("rubik-light ", BOLD,15));
+            actionLbl.setFont(FontGallery.getFont("rubik-light", BOLD,15));
             actionLbl.setHorizontalAlignment(SwingConstants.CENTER);
             welcomeText.add(actionLbl);
 
@@ -77,7 +84,15 @@ public class ClientApp extends JFrame {
     }
 
     private void loadApp(){
-        // todo load client home
+        this.getContentPane().removeAll();
+        this.setSize(600,450);
+        this.setResizable(true);
+
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setDividerLocation(150);
+
+
+        this.setVisible(true);
     }
 
     private void userSetupPage(){
@@ -116,25 +131,30 @@ public class ClientApp extends JFrame {
             username.add(usernameLabel);
             username.add(usernameField);
 
-        JPanel actionBar = new JPanel();
-        actionBar.setBorder(BorderFactory.createEmptyBorder(30,0,30,0));
-            JButton cancelSetupBtn = new JButton("Cancel Setup");
-            cancelSetupBtn.addActionListener(l->{
-                System.exit(1);
-            });
-            JButton connectBtn = new JButton("Go");
-            connectBtn.addActionListener(l->{
-                this.username = usernameField.getText();
-                this.serverIpAddress = ipAddressField.getText();
-                this.connectAfterSetup();
-            });
-            actionBar.add(cancelSetupBtn);
-            actionBar.add(connectBtn);
+        JPanel actionBar = getSetupFieldsPanel(usernameField, ipAddressField);
 
         setupPanel.add(header);
         setupPanel.add(ipAddress);
         setupPanel.add(username);
         setupPanel.add(actionBar);
+    }
+
+    private JPanel getSetupFieldsPanel(JTextField usernameField, JTextField ipAddressField) {
+        JPanel actionBar = new JPanel();
+        actionBar.setBorder(BorderFactory.createEmptyBorder(30,0,30,0));
+        JButton cancelSetupBtn = new JButton("Cancel Setup");
+        cancelSetupBtn.addActionListener(l->{
+            System.exit(1);
+        });
+        JButton connectBtn = new JButton("Go");
+        connectBtn.addActionListener(l->{
+            this.username = usernameField.getText();
+            this.serverIpAddress = ipAddressField.getText();
+            this.connectAfterSetup();
+        });
+        actionBar.add(cancelSetupBtn);
+        actionBar.add(connectBtn);
+        return actionBar;
     }
 
     private void connectAfterSetup(){
@@ -175,13 +195,13 @@ public class ClientApp extends JFrame {
                 clientHandler.startListening();
                 sleep(1000);
                 statusLabel.setText("Creating sources...");
-
-                // todo create a directory for saved data
-                // todo save data via json (clientId, username, ipAddress, pathOfMessageHistory)
-
+                setupAppDirectory();
+                sleep(1000);
+                statusLabel.setText("Done!");
                 loadingIcon.setVisible(false);
                 sleep(1000);
                 connectPanel.setVisible(false);
+                this.setVisible(false);
                 loadApp();
             } catch (IOException e) {
                 connectPanel.setVisible(false);
@@ -190,6 +210,22 @@ public class ClientApp extends JFrame {
             }
         };
         x.submit(load);
+    }
+
+    private void setupAppDirectory(){
+        File appFolder = new File(System.getProperty("user.home") + "/.wifiMessagingClient/");
+        boolean success = appFolder.mkdir();
+
+        if(success || Files.exists(appFolder.toPath())){
+            File conversationFolder = new File(appFolder.getPath() + "/conversations/");
+            conversationFolder.mkdir();
+            this.clientHandler.setConversationDirectory(conversationFolder);
+        } else {
+            showError(new IOException("Failed to create app folder via appFolder.mkdir()"),
+                    "Failed to create app resource folder at user.home");
+            return;
+        }
+
     }
 
     private void clientHandlerInstantiationError(IOException e){
@@ -232,6 +268,152 @@ public class ClientApp extends JFrame {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Asks the server to fetch the username of the clientID provided.
+     * @param clientId the client id to find the name of
+     */
+    private String getClientNameFromServer(String clientId){
+        try {
+            return clientHandler.getClientNameFromServer(clientId);
+        } catch (IOException e) {
+            showError(e,"Failed to fetch conversation info");
+        }
+        return null;
+    }
+
+    private void openConversation(Conversation c){
+        System.out.println("Opened conversation");
+    }
+
+    private class ConversationPanel extends JPanel {
+
+    }
+
+    public ConversationTile getTestTile(){
+        return new ConversationTile("Foreign Client","This was the last message sent in this conversation.");
+    }
+
+    public class ConversationTile extends JPanel implements MouseListener {
+
+        JPanel text;
+        JLabel name, lastMsg;
+        ProfileIcon icon;
+        Conversation c;
+
+        public final static Color TILE_BACKGROUND = new Color(229, 229, 229);
+
+        @Override
+        public void mousePressed(MouseEvent e) {}
+        @Override
+        public void mouseReleased(MouseEvent e) {}
+        @Override
+        public void mouseEntered(MouseEvent e) {}
+        @Override
+        public void mouseExited(MouseEvent e) {}
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            openConversation(c);
+        }
+
+        public ConversationTile(Conversation con){
+            super(new FlowLayout(FlowLayout.LEFT));
+            this.setMaximumSize(new Dimension(200,70));
+            this.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+            this.setBackground(TILE_BACKGROUND);
+
+            String foreignClientId = con.getOppositeClientId(clientId);
+            String foreignClientName = getClientNameFromServer(foreignClientId);
+            icon = new ProfileIcon(foreignClientName);
+            add(icon);
+
+            text = new JPanel();
+            text.setLayout(new BoxLayout(text,BoxLayout.Y_AXIS));
+
+            name = new JLabel(foreignClientName);
+            name.setFont(new Font("Arial",Font.BOLD,12));
+            lastMsg = new JLabel(con.getLastMessageContent());
+            lastMsg.setFont(new Font("Arial",Font.PLAIN,9));
+            lastMsg.setForeground(new Color(61, 61, 61));
+
+            text.add(name);
+            text.add(lastMsg);
+            add(text);
+        }
+
+        public ConversationTile(String foreignClientName, String lastMsgContent){
+            super(new FlowLayout(FlowLayout.LEFT));
+            this.setMaximumSize(new Dimension(Short.MAX_VALUE,100));
+            this.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+            this.setBackground(TILE_BACKGROUND);
+
+            icon = new ProfileIcon(foreignClientName);
+            add(icon);
+
+            text = new JPanel();
+            text.setLayout(new BoxLayout(text,BoxLayout.Y_AXIS));
+            text.setOpaque(true);
+
+            name = new JLabel(foreignClientName);
+            name.setFont(new Font("Arial",Font.BOLD,12));
+            lastMsg = new JLabel(lastMsgContent);
+            lastMsg.setFont(new Font("Arial",Font.PLAIN,9));
+            lastMsg.setForeground(new Color(61, 61, 61));
+
+            text.add(name);
+            text.add(lastMsg);
+            add(text);
+        }
+    }
+
+    public class ProfileIcon extends JLabel {
+        public static Color ICON_COLOR = new Color(49, 133, 220);
+        public static Color INITIAL_COLOR = new Color(0,0,0);
+        public static int SIZE = 40;
+
+        public ProfileIcon(String name){
+            super();
+            this.setText(deriveInitials(name));
+
+            this.putClientProperty("JLabel.labelType", "roundRect"); // todo replace this with working flatlaf
+            this.setBackground(ICON_COLOR);
+            this.setBorder(BorderFactory.createLineBorder(ICON_COLOR,2));
+            this.setForeground(INITIAL_COLOR);
+            this.setFont(new Font("Arial",Font.PLAIN,10));
+            this.setHorizontalAlignment(CENTER);
+
+            Dimension mySize = new Dimension(SIZE,SIZE);
+            this.setMaximumSize(mySize);
+            this.setPreferredSize(mySize);
+        }
+
+        private String deriveInitials(String name){
+            ArrayList<Character> initials = new ArrayList<>();
+
+            for (int i = 0; i < name.length()-1; i++) {
+                if(name.charAt(i) == ' '){
+                    initials.add(name.charAt(i+1));
+                }
+                if(i==0){
+                    initials.add(name.charAt(i));
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for(char c : initials){
+                sb.append(c);
+            }
+            return sb.toString().toUpperCase();
+        }
+    }
+
+    private class ChatPanel extends JPanel {
+
+    }
+
+    private class InputBar extends JPanel {
+
     }
 
     // FOR DEV TESTING ONLY

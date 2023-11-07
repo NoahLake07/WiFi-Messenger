@@ -3,7 +3,7 @@ package com.wifimessenger.system;
 import com.wifimessenger.system.data.Message;
 import com.wifimessenger.system.data.MessageStatus;
 import com.wifimessenger.ui.ServerApp;
-import com.wifimessenger.ui.tools.AppSerializer;
+import com.wifimessenger.ui.tools.ObjectSerializer;
 
 import java.awt.*;
 import java.io.*;
@@ -78,7 +78,7 @@ public class Server {
 
     public void loadMessageBox(File mb) {
         try {
-            loadMessageBox((MessageBox) new AppSerializer<>().load(mb.toPath()));
+            loadMessageBox(new ObjectSerializer<MessageBox>().load(mb.toPath()));
         } catch (IOException | ClassNotFoundException e) {
             println("Failed to load MessageBox: " + e.getMessage(), Color.RED);
         }
@@ -86,7 +86,7 @@ public class Server {
 
     public void saveMessageBox(Path path){
         try {
-            new AppSerializer<>().serialize(messageBox,path);
+            new ObjectSerializer<>().serialize(messageBox,path);
         } catch (IOException e) {
             println("Failed to save MessageBox: "+e.getMessage(),Color.RED);
         }
@@ -276,6 +276,16 @@ public class Server {
                   return;
               }
 
+              if(receivedInput.startsWith("/request/")){
+                  // * CLIENT IS REQUESTING DATA
+                  if(receivedInput.startsWith("/request/name/")){
+                      String[] data = receivedInput.substring(1, receivedInput.length() - 1).split("/");
+                      String foundUsername = clientMap.getUsername(data[2]);
+                      String originClientId = data[3]; // the clientid of the client who originally requested the info
+                      deliver("/name/" + foundUsername + "/", originClientId);
+                  }
+              }
+
               this.deliver(Message.decodeMessage(receivedInput));
         }
 
@@ -291,6 +301,14 @@ public class Server {
                         // TODO send a receipt to the sender (the message wasn't delivered because the client is offline)
                     }
                     break;
+                }
+            }
+        }
+
+        void deliver(String s, String recipientID){
+            for (ClientConnection connection : this.connections){
+                if(connection.clientID.equals(recipientID)){
+                    connection.output.println(s);
                 }
             }
         }

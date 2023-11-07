@@ -1,15 +1,17 @@
 package com.wifimessenger.system;
 
+import com.wifimessenger.system.data.Conversation;
 import com.wifimessenger.system.data.Message;
 import com.wifimessenger.system.data.MessageStatus;
+import com.wifimessenger.ui.tools.ObjectSerializer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +23,10 @@ public class ClientHandler {
     private BufferedReader input;
     private PrintWriter output;
     private UUID identificationMaker;
+    private ArrayList<Conversation> conversations;
     private boolean serverConnected = false;
+    private File conversationDirectory;
+    private boolean read = true;
 
     Socket socket;
 
@@ -39,8 +44,12 @@ public class ClientHandler {
         Runnable clientListen = () -> {
             try {
                 String receivedMessage;
-                while ((receivedMessage = input.readLine()) != null) {
-                    inputReceived(receivedMessage);
+                while(true) {
+                    if(read){
+                        if((receivedMessage = input.readLine()) != null){
+                            inputReceived(receivedMessage);
+                        }
+                    }
                 }
             } catch (SocketException e) {
                 error(e);
@@ -79,6 +88,91 @@ public class ClientHandler {
         m.setMessageID(getNewUniqueID());
 
         output.println(m.parse());
+        for(Conversation c : conversations){
+            if(c.hasClient(recipientClientId)){
+                c.add(m);
+            }
+        }
+    }
+
+    public String getClientNameFromServer(String clientId) throws IOException {
+        read = false;
+
+        String parsedRequest = "/request/name/" + clientId + "/" + this.clientID + "/";
+        output.println();
+
+        String received = "";
+        String retrievedData = null;
+        ArrayList<String> unprocessedMessages = new ArrayList<>();
+        while((received = input.readLine()) != null){
+            if(received.contains("name") && received.contains(clientId)){
+                // decode data sent from server
+                String[] data = received.substring(1, received.length() - 1).split("/");
+                retrievedData = data[1];
+                break;
+            } else {
+                // it wasn't the data being looked for -> add it to a list to decode later
+                unprocessedMessages.add(received);
+            }
+        }
+
+        read = true;
+
+        if(!unprocessedMessages.isEmpty()){
+            for(String msg : unprocessedMessages){
+                inputReceived(msg);
+            }
+        }
+
+        return retrievedData;
+    }
+
+    public void setConversationDirectory(File f){
+        this.conversationDirectory = f;
+        updateConversationsFromFile();
+    }
+
+    private void saveConversationsToFile() throws IOException {
+        if(conversationDirectory.exists()){
+            // delete old files
+            File[] oldFiles = conversationDirectory.listFiles();
+            if (oldFiles != null) {
+                for (File oldFile : oldFiles) {
+                    Files.deleteIfExists(oldFile.toPath());
+                }
+            }
+
+            // create new files
+            if(!this.conversations.isEmpty()) {
+                ObjectSerializer<Conversation> objectSerializer = new ObjectSerializer<>();
+                int i = 0;
+                for (Conversation conversation : this.conversations) {
+                    File convFile = new File(conversationDirectory.getPath() + "/conversation" + i);
+                    objectSerializer.serialize(conversation, convFile.toPath());
+                    i++;
+                }
+            }
+        }
+    }
+
+    private void updateConversationsFromFile() {
+        ArrayList<Conversation> conversations = new ArrayList<>();
+
+        ObjectSerializer<Conversation> objSer = new ObjectSerializer<>();
+        int conversationQty = Objects.requireNonNull(conversationDirectory.listFiles()).length;
+        if(conversationQty>0){
+            File[] conversationFiles = conversationDirectory.listFiles();
+            for (int i = 0; i < conversationQty; i++) {
+                try {
+                    assert conversationFiles != null;
+                    conversations.add(objSer.load(conversationFiles[i].toPath()));
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        this.conversations = conversations;
     }
 
     void connectToServerViaClientID(){
