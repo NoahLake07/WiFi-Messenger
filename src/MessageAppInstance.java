@@ -18,6 +18,7 @@ public class MessageAppInstance extends JFrame {
     public static Color ENHANCED_FOREIGN_COLOR = new Color(0, 80, 136);
     public static Color MY_COLOR = new Color(121, 0, 182);
     public static Color TIME_COLOR = new Color(121, 121, 121);
+    public static Color SYSTEM_COLOR = new Color(19, 72, 0);
 
     private String username = "User";
     private boolean enhancedMessagingEnabled = true;
@@ -46,8 +47,8 @@ public class MessageAppInstance extends JFrame {
         }
         this.setSize(450, 450);
         this.setTitle(windowTitle);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         scrollPane = new JScrollPane();
-        //scrollPane.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
         console = new ConsoleTextArea();
         console.setDefaultColor(Color.BLACK);
         JScrollPane consolePanel = new JScrollPane(console);
@@ -59,6 +60,7 @@ public class MessageAppInstance extends JFrame {
         JButton sendBtn = new JButton("Send");
         inputBar.add(input);
         inputBar.add(sendBtn);
+        inputBar.putClientProperty("Component.focusWidth",2);
         sendBtn.addActionListener(e->{
             String message = input.getText();
             input.setText("");
@@ -74,7 +76,7 @@ public class MessageAppInstance extends JFrame {
         splitPane.setDividerLocation(this.getHeight()-90);
         splitPane.setEnabled(false);
         splitPane.setDividerSize(0);
-        UIManager.put("JComponent.focusWidth", 0);
+        console.setFocusable(false);
         this.setVisible(true);
         console.append("Instance running...\n",Color.BLACK);
 
@@ -92,7 +94,7 @@ public class MessageAppInstance extends JFrame {
             this.clientConnectionSetup();
         }
 
-        this.console.append("Instance Setup Complete.\n", new Color(49, 122, 0));
+        this.console.append("Instance Setup Complete.\n=============================\n", new Color(49, 122, 0));
     }
 
     public MessageAppInstance(int port, String windowTitle){
@@ -112,10 +114,100 @@ public class MessageAppInstance extends JFrame {
 
         JMenu networkDetails = new JMenu("Network");
         settingsMenu.add(networkDetails);
-        JMenuItem viewDetails = new JMenuItem("View Network Details");
-        networkDetails.add(viewDetails);
-        JMenuItem changePort = new JMenuItem("Change Port...");
-        networkDetails.add(changePort);
+            JMenuItem viewDetails = new JMenuItem("View Network Details");
+            viewDetails.addActionListener(e->{
+                JFrame frame = new JFrame("Network Properties");
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.setSize(300, 150);
+                frame.setLayout(new GridLayout(3, 1));
+
+                JLabel ipLabel = new JLabel("IP Address: " + IP_ADDRESS);
+                JLabel portLabel = new JLabel("Port: " + PORT);
+                JLabel networkLabel = new JLabel("Network Name: " + getNetworkName());
+                ipLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+                portLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+                networkLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+                frame.add(networkLabel);
+                frame.add(ipLabel);
+                frame.add(portLabel);
+                frame.setVisible(true);
+            });
+            networkDetails.add(viewDetails);
+            JMenuItem changePort = new JMenuItem("Change Port...");
+            changePort.addActionListener(e->{
+                JTextField portField = new JTextField();
+                JPanel panel = new JPanel(new GridLayout(2, 1));
+                panel.add(new JLabel("Enter New Port:"));
+                panel.add(portField);
+
+                int result = JOptionPane.showConfirmDialog(null, panel,
+                        "Change Port", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                if (result == JOptionPane.OK_OPTION) {
+                    String inputPort = portField.getText();
+                    try {
+                        int newPort = Integer.parseInt(inputPort);
+                        if (isValidPort(newPort)) {
+                            PORT = newPort;
+                            console.append("The port for this instance has been set to " + newPort + "\n",SYSTEM_COLOR);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Invalid port number!", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(null, "Please enter a valid integer port number!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            networkDetails.add(changePort);
+
+        JMenu userSettings = new JMenu("User");
+        settingsMenu.add(userSettings);
+
+        JMenu messageMode = new JMenu("Message Mode");
+            ButtonGroup messageGroup = new ButtonGroup();
+            JRadioButtonMenuItem basicText = new JRadioButtonMenuItem("Basic Messaging");
+            JRadioButtonMenuItem enhancedMessaging = new JRadioButtonMenuItem("Enhanced Messaging");
+            enhancedMessaging.setSelected(enhancedMessagingEnabled);
+            basicText.setSelected(!enhancedMessagingEnabled);
+            enhancedMessaging.addActionListener(e-> setEnhancedMessaging(true));
+            basicText.addActionListener(e-> setEnhancedMessaging(false));
+            messageGroup.add(basicText);
+            messageGroup.add(enhancedMessaging);
+            messageMode.add(basicText);
+            messageMode.add(enhancedMessaging);
+
+        userSettings.add(messageMode);
+        userSettings.addSeparator();
+        JMenuItem changeUsername = new JMenuItem("Change Username");
+        changeUsername.addActionListener(e->{
+            JTextField usernameField = new JTextField(15);
+
+            // Panel to hold the text field
+            JPanel panel = new JPanel();
+            panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Adding borders
+
+            // Add the text field to the panel
+            panel.add(usernameField);
+
+            // Show the dialog box
+            int result = JOptionPane.showConfirmDialog(null, panel,
+                    "Enter New Username", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            // Check if OK button is clicked
+            if (result == JOptionPane.OK_OPTION) {
+                String newUsername = usernameField.getText();
+                this.username = newUsername;
+                console.append("This device's username has been changed to \"" + newUsername + "\"\n", SYSTEM_COLOR);
+            }
+        });
+        userSettings.add(changeUsername);
+        userSettings.add(changeUsername);
+        userSettings.add(messageMode);
+    }
+
+    private void setEnhancedMessaging(boolean enabled){
+        this.enhancedMessagingEnabled = enabled;
     }
 
     public void setRole(MessageAppInstance.Role role){
@@ -233,6 +325,21 @@ public class MessageAppInstance extends JFrame {
         }
         String ipAddress = localhost.getHostAddress();
         return ipAddress;
+    }
+
+    private static String getNetworkName() {
+        String networkName = "";
+        try {
+            InetAddress address = InetAddress.getLocalHost();
+            networkName = address.getCanonicalHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return networkName;
+    }
+
+    private static boolean isValidPort(int port) {
+        return port > 0 && port <= 65535; // Port range is 1 to 65535
     }
 
     public enum Role {
