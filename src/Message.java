@@ -1,8 +1,11 @@
+import java.time.LocalDateTime;
+
 public class Message {
 
     private String sender, messageContent, timestamp, messageId;
-    public static char DELIMITER = '|'; // marks the splits between different data
-    public static char MESSAGE_STAMP = '%'; // marks the beginning of a parsed message
+    private boolean read = false;
+    public static String DELIMITER = "\\|"; // marks the splits between different data
+    public static char MESSAGE_STAMP = '`'; // marks the beginning of a parsed message
 
     public Message(String sender, String messageContent, String timestamp, String messageId) {
         this.sender = sender;
@@ -51,8 +54,37 @@ public class Message {
                 MESSAGE_STAMP;
     }
 
+    public void setTimestampToNow(){
+        LocalDateTime now = LocalDateTime.now();
+        int month = now.getMonth().getValue();
+        int day = now.getDayOfMonth();
+        int year = now.getYear();
+
+        int hour = now.getHour();
+        int minute = now.getMinute();
+
+        String meridiem; // 12-hour clock
+        if(hour+1 >= 12){
+            meridiem = "PM";
+            hour-=12;
+        } else {
+            meridiem = "AM";
+        }
+
+        String timestamp = month + "/" + day + "/" + year + "  " + hour + ":" + minute + " " + meridiem;
+        this.timestamp = timestamp;
+    }
+
+    public boolean isRead(){
+        return this.read;
+    }
+
+    public void markAsRead(){
+        this.read = true;
+    }
+
     public static Message decodeParsedMessage(String parsedMessage){
-        String innerPM = parsedMessage.substring(1, parsedMessage.length() - 1);
+        String innerPM = parsedMessage.substring(1, parsedMessage.length() - 1); // remove message stamps
 
         Message m = new Message();
         String[] splitData = innerPM.split(DELIMITER + "");

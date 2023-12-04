@@ -12,8 +12,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class MessageAppInstance extends JFrame {
 
-    public static Color FOREIGN_COLOR = new Color(101, 61, 0);
-    public static Color MY_COLOR = new Color(88, 0, 134);
+    public static Color FOREIGN_COLOR = new Color(157, 126, 0);
+    public static Color MY_COLOR = new Color(121, 0, 182);
+    public static Color TIME_COLOR = new Color(121, 121, 121);
+
+    private String username = "User";
+    private boolean enhancedMessagingEnabled = true;
+    private int lastMessageId = 0;
 
     private int PORT;
     private String IP_ADDRESS;
@@ -73,7 +78,7 @@ public class MessageAppInstance extends JFrame {
             this.clientConnectionSetup();
         }
 
-        this.console.append("Messenger App Instance Setup Complete.\n", new Color(74, 180, 0));
+        this.console.append("Instance Setup Complete.\n", new Color(49, 122, 0));
     }
 
     public MessageAppInstance(int port, String windowTitle){
@@ -88,6 +93,14 @@ public class MessageAppInstance extends JFrame {
         this.role = role;
     }
 
+    public void setUsername(String username){
+        this.username = username;
+    }
+
+    public String getUsername(){
+        return this.username;
+    }
+
     private void setupUniqueCode(){
         Random random = new Random();
         this.myCode = 100_000_000 + random.nextInt(900_000_000);
@@ -96,12 +109,12 @@ public class MessageAppInstance extends JFrame {
     private void serverConnectionSetup() {
         try {
             ServerSocket serverSocket = new ServerSocket(this.PORT);
-            this.console.append("Server is running and waiting for connections...\n", new Color(74, 180, 0));
+            this.console.append("Server is running and waiting for connections...\n", new Color(26, 61, 0));
 
             ExecutorService executor = Executors.newCachedThreadPool(); // Use a thread pool
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                this.console.append("Client connected: " + clientSocket.getInetAddress().getHostAddress() + "\n", new Color(74, 180, 0));
+                this.console.append("> Client connected: " + clientSocket.getInetAddress().getHostAddress() + "\n", new Color(0, 105, 180));
 
                 // Handle each client connection in a separate thread
                 Runnable serverListen = () -> {
@@ -149,21 +162,38 @@ public class MessageAppInstance extends JFrame {
     }
 
     private void messageReceived(String messageReceived) {
-        if(messageReceived.startsWith("%")){
-            // todo decode message
+        if(messageReceived.startsWith(String.valueOf(Message.MESSAGE_STAMP))){
+            System.out.println(role.toString().toUpperCase() + " received: " + messageReceived);
+            Message decodedMessage = new Message(messageReceived);
+            appendMessage(decodedMessage,true);
+            lastMessageId++;
         } else {
             console.append("Anonymous: ", FOREIGN_COLOR);
             console.append(messageReceived + "\n", Color.BLACK);
         }
     }
 
-    public void sendMessage(String messageToSend) {
-        // Send message to the other instance
-        output.println(messageToSend);
+    public void appendMessage(Message m, boolean isForeign){
+        console.append(m.getTimestamp() + "  ", TIME_COLOR);
+        console.append(m.getSender() + ": ", (isForeign ? FOREIGN_COLOR : MY_COLOR));
+        console.append(m.getMessageContent() + "\n", Color.BLACK);
+    }
 
-        // display on UI
-        console.append("ME: ", MY_COLOR);
-        console.append(messageToSend + "\n", Color.BLACK);
+    public void sendMessage(String messageToSend) {
+        if(enhancedMessagingEnabled){
+            String mID = "x" + lastMessageId++;
+            Message decodedMessage = new Message(this.username,messageToSend,null,mID);
+            decodedMessage.setTimestampToNow();
+            appendMessage(decodedMessage,false);
+            output.println(messageToSend);
+        } else {
+            // Send message to the other instance
+            output.println(messageToSend);
+
+            // display on UI
+            console.append("ME: ", MY_COLOR);
+            console.append(messageToSend + "\n", Color.BLACK);
+        }
     }
 
     public static String getIpAddress(){
@@ -177,7 +207,7 @@ public class MessageAppInstance extends JFrame {
         return ipAddress;
     }
 
-    enum Role {
+    public enum Role {
         SERVER, CLIENT
     }
 
