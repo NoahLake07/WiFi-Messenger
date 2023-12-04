@@ -30,6 +30,20 @@ public class ConsoleTextArea extends JTextPane {
         }
     }
 
+    public void append(String text, Color color, Font font) {
+        StyledDocument doc = getStyledDocument();
+        SimpleAttributeSet style = new SimpleAttributeSet();
+        StyleConstants.setForeground(style, color);
+        StyleConstants.setFontFamily(style, font.getFamily());
+        StyleConstants.setFontSize(style, font.getSize());
+
+        try {
+            doc.insertString(doc.getLength(), text, style);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void append(String text) {
         append(text, this.defaultColor);
     }

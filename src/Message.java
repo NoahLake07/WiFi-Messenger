@@ -4,8 +4,8 @@ public class Message {
 
     private String sender, messageContent, timestamp, messageId;
     private boolean read = false;
-    public static String DELIMITER = "\\|"; // marks the splits between different data
-    public static char MESSAGE_STAMP = '`'; // marks the beginning of a parsed message
+    public static String DELIMITER = "`"; // marks the splits between different data
+    public static char MESSAGE_STAMP = '%'; // marks the beginning of a parsed message
 
     public Message(String sender, String messageContent, String timestamp, String messageId) {
         this.sender = sender;
@@ -71,7 +71,9 @@ public class Message {
             meridiem = "AM";
         }
 
-        String timestamp = month + "/" + day + "/" + year + "  " + hour + ":" + minute + " " + meridiem;
+        String timestamp = month + "/" + day + "/" + year + " " +
+                hour + ":" + (String.valueOf(minute).length() != 2 ? "0" + minute : minute) + " " +
+                meridiem;
         this.timestamp = timestamp;
     }
 

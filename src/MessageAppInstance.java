@@ -1,3 +1,5 @@
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -13,6 +15,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class MessageAppInstance extends JFrame {
 
     public static Color FOREIGN_COLOR = new Color(157, 126, 0);
+    public static Color ENHANCED_FOREIGN_COLOR = new Color(0, 80, 136);
     public static Color MY_COLOR = new Color(121, 0, 182);
     public static Color TIME_COLOR = new Color(121, 121, 121);
 
@@ -31,10 +34,16 @@ public class MessageAppInstance extends JFrame {
 
     private ConsoleTextArea console;
     private JScrollPane scrollPane;
+    private JMenuBar menuBar;
 
     public MessageAppInstance(int port, String ipAddress, String windowTitle, Role role) {
         // * UI SETUP
         super();
+        try {
+            UIManager.setLookAndFeel(new FlatMacLightLaf());
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
         this.setSize(450, 450);
         this.setTitle(windowTitle);
         scrollPane = new JScrollPane();
@@ -63,8 +72,13 @@ public class MessageAppInstance extends JFrame {
         splitPane.setBottomComponent(inputBar);
         this.add(splitPane);
         splitPane.setDividerLocation(this.getHeight()-90);
+        splitPane.setEnabled(false);
+        splitPane.setDividerSize(0);
+        UIManager.put("JComponent.focusWidth", 0);
         this.setVisible(true);
         console.append("Instance running...\n",Color.BLACK);
+
+        setupMenuBar();
 
         // * MESSENGER SETUP
         this.role = role;
@@ -87,6 +101,21 @@ public class MessageAppInstance extends JFrame {
 
     public MessageAppInstance(int port, String windowTitle, Role role){
         this(port, getIpAddress(), windowTitle, role);
+    }
+
+    private void setupMenuBar(){
+        menuBar = new JMenuBar();
+        this.setJMenuBar(menuBar);
+
+        JMenu settingsMenu = new JMenu("Settings");
+        menuBar.add(settingsMenu);
+
+        JMenu networkDetails = new JMenu("Network");
+        settingsMenu.add(networkDetails);
+        JMenuItem viewDetails = new JMenuItem("View Network Details");
+        networkDetails.add(viewDetails);
+        JMenuItem changePort = new JMenuItem("Change Port...");
+        networkDetails.add(changePort);
     }
 
     public void setRole(MessageAppInstance.Role role){
@@ -163,7 +192,6 @@ public class MessageAppInstance extends JFrame {
 
     private void messageReceived(String messageReceived) {
         if(messageReceived.startsWith(String.valueOf(Message.MESSAGE_STAMP))){
-            System.out.println(role.toString().toUpperCase() + " received: " + messageReceived);
             Message decodedMessage = new Message(messageReceived);
             appendMessage(decodedMessage,true);
             lastMessageId++;
@@ -174,18 +202,18 @@ public class MessageAppInstance extends JFrame {
     }
 
     public void appendMessage(Message m, boolean isForeign){
-        console.append(m.getTimestamp() + "  ", TIME_COLOR);
-        console.append(m.getSender() + ": ", (isForeign ? FOREIGN_COLOR : MY_COLOR));
+        console.append(m.getTimestamp() + "  ", TIME_COLOR, new Font("Arial",Font.ITALIC,10));
+        console.append(m.getSender() + ": ", (isForeign ? ENHANCED_FOREIGN_COLOR : MY_COLOR));
         console.append(m.getMessageContent() + "\n", Color.BLACK);
     }
 
     public void sendMessage(String messageToSend) {
         if(enhancedMessagingEnabled){
             String mID = "x" + lastMessageId++;
-            Message decodedMessage = new Message(this.username,messageToSend,null,mID);
-            decodedMessage.setTimestampToNow();
-            appendMessage(decodedMessage,false);
-            output.println(messageToSend);
+            Message parsedMessage = new Message(this.username,messageToSend,null,mID);
+            parsedMessage.setTimestampToNow();
+            appendMessage(parsedMessage,false);
+            output.println(parsedMessage.getParsedMessage());
         } else {
             // Send message to the other instance
             output.println(messageToSend);
