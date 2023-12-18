@@ -1,60 +1,33 @@
+import com.wifimessenger.data.MessageStatus;
+
 import java.time.LocalDateTime;
 
 public class Message {
 
-    private String sender, messageContent, timestamp, messageId;
-    private boolean read = false;
-    public static String DELIMITER = "`"; // marks the splits between different data
-    public static char MESSAGE_STAMP = '%'; // marks the beginning of a parsed message
+    private String senderID;
+    private String receiverID;
+    private String messageContent;
+    private String timestamp;
+    private String messageID;
+    private MessageStatus status;
 
-    public Message(String sender, String messageContent, String timestamp, String messageId) {
-        this.sender = sender;
+    void setSenderID(String senderID){
+        this.senderID = senderID;
+    }
+
+    void setReceiverID(String receiverID){
+        this.receiverID = receiverID;
+    }
+
+    void setMessageContent(String messageContent){
         this.messageContent = messageContent;
+    }
+
+    void setTimestamp(String timestamp){
         this.timestamp = timestamp;
-        this.messageId = messageId;
     }
 
-    public Message(String parsedMessage){
-        Message decoded = Message.decodeParsedMessage(parsedMessage);
-        this.sender = decoded.getSender();
-        this.messageContent = decoded.getMessageContent();
-        this.timestamp = decoded.getTimestamp();
-        this.messageId = decoded.getMessageId();
-    }
-
-    public Message(){
-        this.sender = null;
-        this.messageContent = null;
-        this.timestamp = null;
-        this.messageId = null;
-    }
-
-    public String getSender() {
-        return sender;
-    }
-
-    public String getMessageContent() {
-        return messageContent;
-    }
-
-    public String getTimestamp(){
-        return timestamp;
-    }
-
-    public String getMessageId(){
-        return messageId;
-    }
-
-    public String getParsedMessage(){
-        return MESSAGE_STAMP +
-                    sender +            DELIMITER +
-                    messageContent +    DELIMITER +
-                    timestamp +         DELIMITER +
-                    messageId +
-                MESSAGE_STAMP;
-    }
-
-    public void setTimestampToNow(){
+    public void setTimestamp(){
         LocalDateTime now = LocalDateTime.now();
         int month = now.getMonth().getValue();
         int day = now.getDayOfMonth();
@@ -77,25 +50,66 @@ public class Message {
         this.timestamp = timestamp;
     }
 
-    public boolean isRead(){
-        return this.read;
+    void setMessageID(String messageID){
+        this.messageID = messageID;
     }
 
-    public void markAsRead(){
-        this.read = true;
+    void setStatus(MessageStatus status){
+        this.status = status;
     }
 
-    public static Message decodeParsedMessage(String parsedMessage){
-        String innerPM = parsedMessage.substring(1, parsedMessage.length() - 1); // remove message stamps
+    public String getSenderID() {
+        return this.senderID;
+    }
 
+    public String getReceiverID(){
+        return this.receiverID;
+    }
+
+    public String getMessageContent(){
+        return this.messageContent;
+    }
+
+    public String getTimestamp(){
+        return this.timestamp;
+    }
+
+    public String getMessageID(){
+        return this.messageID;
+    }
+
+    public static Message decodeMessage(String parsedMessage){
+        String[] data = parsedMessage.substring(1, parsedMessage.length() - 1).split("/");
         Message m = new Message();
-        String[] splitData = innerPM.split(DELIMITER + "");
-        m.sender = splitData[0];
-        m.messageContent = splitData[1];
-        m.timestamp = splitData[2];
-        m.messageId = splitData[3];
+        m.setMessageID(data[0]);
+        m.setSenderID(data[1]);
+        m.setReceiverID(data[2]);
+        m.setMessageContent(data[3]);
+        m.setTimestamp(data[4]);
+
+        MessageStatus status;
+        if(data[5].toLowerCase().equals("pending")){
+            status = MessageStatus.PENDING;
+        } else if (data[5].toLowerCase().equals("delivered")){
+            status = MessageStatus.DELIVERED;
+        } else {
+            status = MessageStatus.READ;
+        }
+        m.setStatus(status);
 
         return m;
+    }
+
+    public String parse(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("msg/");
+        sb.append(messageID).append("/");
+        sb.append(senderID).append("/");
+        sb.append(receiverID).append("/");
+        sb.append(messageContent).append("/");
+        sb.append(timestamp).append("/");
+        sb.append(status).append("/");
+        return sb.toString();
     }
 
 }

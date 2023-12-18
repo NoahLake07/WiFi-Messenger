@@ -1,0 +1,12 @@
+[
+
+  {
+    "clientID" : "client001",
+    "username" : "John Doe"
+  },
+  {
+    "clientID" : "client002",
+    "username" : "Billy Doe"
+  }
+
+]
