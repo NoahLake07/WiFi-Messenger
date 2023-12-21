@@ -5,7 +5,12 @@ import com.wifimessenger.system.Server;
 import com.wifimessenger.ui.ClientApp;
 import com.wifimessenger.ui.ServerApp;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class DevMain {
 
@@ -50,24 +55,33 @@ public class DevMain {
         new DevMain().runServer();
     }
 
-    public void runSimpleServer(){
-        try {
-            TCPServer x = new TCPServer();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public void runSimpleServer() throws IOException {
+        System.out.println("server is started");
+        ServerSocket serverSocket= new ServerSocket(55286);
+        System.out.println("server is waiting");
+        Socket socket=serverSocket.accept();
+        System.out.println("Client connected");
+        BufferedReader reader=new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String str=reader.readLine();
+        System.out.println("Client data: "+str);
+        socket.close();
+        serverSocket.close();
     }
 
-    public void runSimpleClient(){
-        try {
-            TCPClient x = new TCPClient();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public void runSimpleClient() throws IOException {
+        Socket socket = new Socket("127.0.0.1", 55286);
+        OutputStreamWriter os = new OutputStreamWriter(socket.getOutputStream());
+        os.write("Santosh Karna");
+        os.flush();
+        socket.close();
     }
 
     public static void main(String[] args) {
-        new DevMain().connectToServerViaClient();
+        try {
+            new DevMain().runSimpleServer();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
