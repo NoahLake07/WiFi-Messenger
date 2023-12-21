@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 public class Server {
 
     public static String SERVER_IP_ADDRESS = "192.168.7.223"; // todo make this alterable
-    public static int PORT = 5000;
+    public static int PORT = 8080;
 
     // * MESSAGE I/O
     private BufferedReader input;
@@ -101,7 +101,9 @@ public class Server {
         public void run() {
             while(true){
                 try {
+                    println("Waiting to accept a client connection...");
                     Socket clientSocket = serverSocket.accept();
+                    println("Client accepted. Processing request...");
                     handleNewClientConnection(clientSocket);
                 } catch (IOException e) {
                     throw new RuntimeException(e);

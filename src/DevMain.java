@@ -1,7 +1,11 @@
+import com.wifimessenger.dev.TCPClient;
+import com.wifimessenger.dev.TCPServer;
 import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
 import com.wifimessenger.ui.ClientApp;
 import com.wifimessenger.ui.ServerApp;
+
+import java.io.IOException;
 
 public class DevMain {
 
@@ -46,8 +50,24 @@ public class DevMain {
         new DevMain().runServer();
     }
 
+    public void runSimpleServer(){
+        try {
+            TCPServer x = new TCPServer();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void runSimpleClient(){
+        try {
+            TCPClient x = new TCPClient();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String[] args) {
-        new DevMain().runAppTest();
+        new DevMain().connectToServerViaClient();
     }
 
 }
