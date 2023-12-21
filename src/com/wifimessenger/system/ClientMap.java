@@ -1,3 +1,5 @@
+package com.wifimessenger.system;
+
 import com.google.gson.*;
 
 import java.io.File;
@@ -7,6 +9,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 public class ClientMap extends ArrayList<ClientMap.ClientProfile> {
@@ -100,9 +103,9 @@ public class ClientMap extends ArrayList<ClientMap.ClientProfile> {
         return -1;
     }
 
-    public File createJSONFile(String destDir){
-        File outputFile = new File(destDir + "/profilemap.json");
-        System.out.println(outputFile.getPath());
+    public File updateJSON(String destDir) { // TODO FIX THIS METHOD: IT DOESN'T CREATE A FILE
+        String outputFilePath = destDir + (destDir.contains("profilemap.json") ? "" : "profilemap.json");
+        File outputFile = new File(outputFilePath);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray jsonArray = new JsonArray();
 
@@ -113,8 +116,10 @@ public class ClientMap extends ArrayList<ClientMap.ClientProfile> {
             jsonArray.add(jsonObject);
         }
 
-        try (FileWriter fileWriter = new FileWriter(outputFile)) {
-            gson.toJson(jsonArray, fileWriter);
+        try {
+            String jsonString = gson.toJson(jsonArray);
+            Files.writeString(outputFile.toPath(), jsonString,
+                    StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Error writing to JSON file", e);
         }

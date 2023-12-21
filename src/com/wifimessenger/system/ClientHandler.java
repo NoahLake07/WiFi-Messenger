@@ -1,4 +1,6 @@
-import com.wifimessenger.data.MessageStatus;
+package com.wifimessenger.system;
+
+import com.wifimessenger.system.data.MessageStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,20 +23,17 @@ public class ClientHandler {
 
     Socket socket;
 
-    public ClientHandler(String clientID) {
+    public ClientHandler(String clientID, String username, String ipAddress) {
         try {
-            socket = new Socket(Server.SERVER_IP_ADDRESS, Server.PORT);
+            socket = new Socket(ipAddress, Server.PORT);
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(), true);
             this.clientID = clientID;
+            this.username = username;
             this.startListening();
         } catch (IOException e){
             e.printStackTrace();
         }
-    }
-
-    public ClientHandler(){
-        this(createNewClientId());
     }
 
     public void startListening(){
@@ -78,13 +77,13 @@ public class ClientHandler {
         output.println(m.parse());
     }
 
-    public void connectToServerViaClientID(){
+    void connectToServerViaClientID(){
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        output.println("/clientID/" + this.clientID + "/username/" + this.username);
+        output.println("/clientID/" + this.clientID + "/username/" + this.username + "/");
         serverConnected = true;
     }
 
@@ -97,7 +96,7 @@ public class ClientHandler {
     }
 
     public static String createNewClientId(){
-        return "-insert new id here-";
+        return UUID.randomUUID().toString();
     }
 
     String getNewUniqueID(){

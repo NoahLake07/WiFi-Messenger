@@ -1,8 +1,11 @@
-import com.wifimessenger.data.MessageStatus;
+package com.wifimessenger.system;
 
+import com.wifimessenger.system.data.MessageStatus;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class Message {
+public class Message implements Serializable {
 
     private String senderID;
     private String receiverID;
