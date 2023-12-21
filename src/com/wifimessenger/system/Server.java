@@ -3,6 +3,7 @@ package com.wifimessenger.system;
 import com.wifimessenger.system.data.MessageStatus;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -49,9 +50,11 @@ public class Server {
      */
     public Server(int port, ClientMap clientMap){
         try {
-            serverSocket = new ServerSocket(port);
+            println("Server instantiation started.");
+            serverSocket = new ServerSocket(PORT, 0, InetAddress.getByName("0.0.0.0"));
             this.PORT = port;
             this.clientMap = clientMap;
+            println("Server instantiated. Port: " + serverSocket.getLocalPort() +"\tInfo: "+serverSocket.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -87,6 +90,8 @@ public class Server {
 
         ExecutorService executor2 = Executors.newCachedThreadPool();
         executor2.submit(enableMessaging);
+
+        println("Started cached threads...");
     }
 
     private Runnable enableMessaging = new Runnable() {

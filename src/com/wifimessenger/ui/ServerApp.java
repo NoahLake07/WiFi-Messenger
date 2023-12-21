@@ -150,6 +150,7 @@ public class ServerApp extends JFrame {
 
             @Override
             public void println(String s){
+                super.println(s);
                 if(debugCheckbox.isSelected()){
                     console.append(s + "\n");
                 }
