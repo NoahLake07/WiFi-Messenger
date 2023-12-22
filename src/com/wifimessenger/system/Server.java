@@ -1,7 +1,9 @@
 package com.wifimessenger.system;
 
 import com.wifimessenger.system.data.MessageStatus;
+import com.wifimessenger.ui.ServerApp;
 
+import java.awt.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -13,7 +15,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    public static String SERVER_IP_ADDRESS = "192.168.7.223"; // todo make this alterable
+    public static String SERVER_IP_ADDRESS = "192.168.7.168"; // todo make this alterable
     public static int PORT = 8080;
 
     // * MESSAGE I/O
@@ -50,11 +52,10 @@ public class Server {
      */
     public Server(int port, ClientMap clientMap){
         try {
-            println("Server instantiation started.");
             serverSocket = new ServerSocket(PORT, 0, InetAddress.getByName("0.0.0.0"));
             this.PORT = port;
             this.clientMap = clientMap;
-            println("Server instantiated. Port: " + serverSocket.getLocalPort() +"\tInfo: "+serverSocket.toString());
+            println("Server instantiated. "+serverSocket.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -90,8 +91,6 @@ public class Server {
 
         ExecutorService executor2 = Executors.newCachedThreadPool();
         executor2.submit(enableMessaging);
-
-        println("Started cached threads...");
     }
 
     private Runnable enableMessaging = new Runnable() {
@@ -106,9 +105,9 @@ public class Server {
         public void run() {
             while(true){
                 try {
-                    println("Waiting to accept a client connection...");
+                    println("> Waiting to accept a client connection...");
                     Socket clientSocket = serverSocket.accept();
-                    println("Client accepted. Processing request...");
+                    println("Client accepted. Processing request...", ServerApp.SUCCESS_COLOR);
                     handleNewClientConnection(clientSocket);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -183,11 +182,25 @@ public class Server {
 
     public void newConnection(String id, String username){}
 
+    public void closeClientConnection(String username){
+        String clientID = clientMap.getClientID(username);
+        try {
+            connectionService.closeConnection(clientID);
+            println("Closed client connection. (id:"+clientID+")", new Color(5, 103, 127));
+        } catch (IOException e) {
+            println(e.getMessage(), Color.RED);
+        }
+    }
+
     private String getNewMessageID(){
         return UUID.randomUUID().toString();
     }
 
     public void println(String s){
+        System.out.println(s);
+    }
+
+    public void println(String s, Color c){
         System.out.println(s);
     }
 
@@ -226,6 +239,14 @@ public class Server {
 
         boolean isRunning(){
             return this.run;
+        }
+
+        void closeConnection(String clientID) throws IOException {
+              for(ClientConnection c: this.connections){
+                  if (c.clientID.equals(clientID)){
+                      c.clientSocket.close();
+                  }
+              }
         }
 
         private void startScanning(){

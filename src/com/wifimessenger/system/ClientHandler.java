@@ -110,4 +110,8 @@ public class ClientHandler {
         return identificationMaker.toString();
     }
 
+    public static void main(String[] args) {
+        new ClientHandler("id01","Bill B. Joe",Server.SERVER_IP_ADDRESS);
+    }
+
 }

@@ -10,6 +10,10 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class ServerApp extends JFrame {
 
@@ -17,6 +21,7 @@ public class ServerApp extends JFrame {
     public static final int DEFAULT_PORT = 8080;
     public static final Dimension normalAppSize = new Dimension(300,400);
     public static final Dimension debugAppSize = new Dimension(400,533);
+    public static final Color SUCCESS_COLOR = new Color(16, 54, 0);
 
     // * Backend connections
     Server server;
@@ -29,6 +34,10 @@ public class ServerApp extends JFrame {
     JCheckBox debugCheckbox;
 
     public ServerApp(){
+        this(false);
+    }
+
+    public ServerApp(boolean debugMode){
         super();
         this.setSize(normalAppSize);
         this.setResizable(false);
@@ -70,20 +79,7 @@ public class ServerApp extends JFrame {
         debug.setBorder(BorderFactory.createEmptyBorder(0,25,0,0));
 
         debugCheckbox = new JCheckBox("Enable Debug Console");
-        debugCheckbox.addActionListener(e->{
-            boolean b = debugCheckbox.isSelected();
-            console.setVisible(b);
-            if(b){
-                while(this.getWidth()<=debugAppSize.width){
-                    this.setSize(this.getWidth()+1,this.getHeight()+1);
-                }
-            }else {
-                while(this.getWidth()>=normalAppSize.width){
-                    this.setSize(this.getWidth()-1,this.getHeight()-1);
-                }
-            }
-        });
-        debugCheckbox.setSelected(false);
+        debugCheckbox.setSelected(debugMode);
         debug.add(debugCheckbox);
 
         JPanel detailsPanel = new JPanel();
@@ -108,17 +104,15 @@ public class ServerApp extends JFrame {
         home.add(console);
         console.setVisible(false);
 
-        detailsBtn.addActionListener(e->{
-            // Input values (server IP address and version number)
-            String serverIpAddress = server.getIpAddress(); // Replace with your server IP address
-            String versionNumber = "1.0"; // Replace with your version number
+        ActionListener l = e -> {
+            String serverIpAddress = server.getIpAddress();
+            String versionNumber = "1.0";
 
-            // Create a JPanel for the server information
             JPanel panel = new JPanel(new GridLayout(2, 1));
             panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             JLabel ipAddressLabel = new JLabel("Server IP Address: " + serverIpAddress);
-            JLabel versionLabel = new JLabel("Version Number: " + versionNumber);
+            JLabel versionLabel = new JLabel("App Version: " + versionNumber);
 
             panel.add(ipAddressLabel);
             panel.add(versionLabel);
@@ -130,7 +124,29 @@ public class ServerApp extends JFrame {
                     "Server Information",
                     JOptionPane.INFORMATION_MESSAGE
             );
+        };
+
+        detailsBtn.addActionListener(l);
+
+        Runnable debugRunnable = ()-> {
+            boolean b = debugCheckbox.isSelected();
+            console.setVisible(b);
+            if(b){
+                while(getWidth()<=debugAppSize.width){
+                    setSize(getWidth()+1,getHeight()+1);
+                }
+            }else {
+                while(getWidth()>=normalAppSize.width){
+                    setSize(getWidth()-1,getHeight()-1);
+                }
+            }
+        };
+        debugCheckbox.addActionListener(e->{
+            debugRunnable.run();
         });
+        if(debugMode){
+            debugRunnable.run();
+        }
 
         add(home);
         home.setVisible(true);
@@ -145,6 +161,7 @@ public class ServerApp extends JFrame {
         server = new Server(DEFAULT_PORT){
             @Override
             public void newConnection(String id, String username){
+                println("New connection established.\n\t-> " + id + "  USERNAME: " + username);
                 clients.addClient(getClientString(id,username));
             }
 
@@ -152,7 +169,15 @@ public class ServerApp extends JFrame {
             public void println(String s){
                 super.println(s);
                 if(debugCheckbox.isSelected()){
-                    console.append(s + "\n");
+                    console.append("\n"+s);
+                }
+            }
+
+            @Override
+            public void println(String s, Color c){
+                super.println(s);
+                if(debugCheckbox.isSelected()){
+                    console.append("\n"+s,c);
                 }
             }
         };
@@ -202,6 +227,7 @@ public class ServerApp extends JFrame {
             clientsList.setBorder(BorderFactory.createEmptyBorder(5,10,5,10));
             clientsList.setForeground(new Color(0, 44, 79));
             JScrollPane scrollPane = new JScrollPane(clientsList);
+            setupRightClick();
 
             listTitle = new JLabel();
             updateLabel();
@@ -209,6 +235,26 @@ public class ServerApp extends JFrame {
             setLayout(new BorderLayout());
             add(listTitle, BorderLayout.NORTH);
             add(scrollPane, BorderLayout.CENTER);
+        }
+
+        private void setupRightClick(){
+            clientsList.addMouseListener( new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if ( SwingUtilities.isRightMouseButton(e) ) {
+                        clientsList.setSelectedIndex(clientsList.locationToIndex(e.getPoint()));
+
+                        JPopupMenu menu = new JPopupMenu();
+                        JMenuItem itemRemove = new JMenuItem("Remove");
+                        itemRemove.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                removeClient(clientsList.getSelectedIndex());
+                            }
+                        });
+                        menu.add(itemRemove);
+                        menu.show(clientsList, e.getPoint().x, e.getPoint().y);
+                    }
+                }
+            });
         }
 
         private void updateLabel(){
@@ -222,6 +268,7 @@ public class ServerApp extends JFrame {
         }
 
         public void removeClient(int index) {
+            server.closeClientConnection(clientsModel.get(index));
             clientsModel.removeElementAt(index);
             clientsConnected--;
             updateLabel();
@@ -271,6 +318,8 @@ public class ServerApp extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());
         }
 
         public void append(String text) {

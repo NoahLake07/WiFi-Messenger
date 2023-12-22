@@ -1,5 +1,7 @@
 package com.wifimessenger.dev;
 
+import com.wifimessenger.system.Server;
+
 import java.io.IOException;
 import java.net.Socket;
 
@@ -26,6 +28,6 @@ public class SimpleClient {
     }
 
     public static void main(String[] args) {
-        SimpleClient client = new SimpleClient("192.168.7.223", 8080); // Replace with the server's IP and port
+        SimpleClient client = new SimpleClient(Server.SERVER_IP_ADDRESS, 8080);
     }
 }

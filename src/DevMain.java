@@ -33,7 +33,7 @@ public class DevMain {
     }
 
     public void runServer(){
-        ServerApp serverApp = new ServerApp();
+        ServerApp serverApp = new ServerApp(true);
     }
 
     public void connectToServerViaClient(){
@@ -43,7 +43,6 @@ public class DevMain {
 
     public static void main(String[] args) {
         new DevMain().runServer();
-        new DevMain().connectToServerViaClient();
     }
 
 }
