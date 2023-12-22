@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -25,21 +26,13 @@ public class ClientHandler {
 
     Socket socket;
 
-    public ClientHandler(String clientID, String username, String ipAddress) {
-        try {
-            socket = new Socket(ipAddress, Server.PORT);
-            input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            output = new PrintWriter(socket.getOutputStream(), true);
-            this.clientID = clientID;
-            this.username = username;
-            this.startListening();
-        } catch (ConnectException e){
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public ClientHandler(String clientID, String username, String ipAddress) throws IOException {
+        socket = new Socket(ipAddress, Server.PORT);
+        input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        output = new PrintWriter(socket.getOutputStream(), true);
+        this.clientID = clientID;
+        this.username = username;
+        this.startListening();
     }
 
     public void startListening(){
@@ -50,11 +43,17 @@ public class ClientHandler {
                 while ((receivedMessage = input.readLine()) != null) {
                     inputReceived(receivedMessage);
                 }
+            } catch (SocketException e) {
+                error(e);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         };
         executor.submit(clientListen);
+    }
+
+    public void error(SocketException e){
+        e.printStackTrace();
     }
 
     private void inputReceived(String receivedMessage){
@@ -111,7 +110,11 @@ public class ClientHandler {
     }
 
     public static void main(String[] args) {
-        new ClientHandler("id02","Bill B. Joe",Server.SERVER_IP_ADDRESS);
+        try {
+            new ClientHandler("id02","Bill B. Joe",Server.SERVER_IP_ADDRESS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

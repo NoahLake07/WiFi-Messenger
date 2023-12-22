@@ -2,6 +2,8 @@ import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
 import com.wifimessenger.ui.ServerApp;
 
+import java.io.IOException;
+
 public class DevMain {
 
     public void runtest(){
@@ -14,7 +16,11 @@ public class DevMain {
         }
 
         String clientID = "CLIENT001", c1_username = "John B. Doe";
-        ClientHandler clientHandler = new ClientHandler(clientID,c1_username,Server.SERVER_IP_ADDRESS);
+        try {
+            ClientHandler clientHandler = new ClientHandler(clientID,c1_username,Server.SERVER_IP_ADDRESS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void runClientThresholdTest(int qty){
@@ -28,7 +34,11 @@ public class DevMain {
             }
 
             String clientID = ClientHandler.createNewClientId(), c1_username = "CLIENT00"+(i+1);
-            ClientHandler clientHandler = new ClientHandler(clientID,c1_username,Server.SERVER_IP_ADDRESS);
+            try {
+                ClientHandler clientHandler = new ClientHandler(clientID,c1_username,Server.SERVER_IP_ADDRESS);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -37,7 +47,12 @@ public class DevMain {
     }
 
     public void connectToServerViaClient(){
-        ClientHandler ch = new ClientHandler("clientidxxx","John Smith",Server.SERVER_IP_ADDRESS);
+        ClientHandler ch = null;
+        try {
+            ch = new ClientHandler("clientidxxx","John Smith", Server.SERVER_IP_ADDRESS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         ch.startListening();
     }
 

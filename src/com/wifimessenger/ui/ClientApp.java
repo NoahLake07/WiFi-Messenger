@@ -2,29 +2,34 @@ package com.wifimessenger.ui;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.wifimessenger.system.ClientHandler;
+import com.wifimessenger.system.Server;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static java.awt.Font.BOLD;
 
 public class ClientApp extends JFrame {
 
     // * CONSTANTS
-    public static Dimension DEFAULT_APP_SIZE = new Dimension(500,300);
+    public static Dimension DEFAULT_APP_SIZE = new Dimension(600,400);
 
     // * Local Objects
     ClientHandler clientHandler;
-    private String clientId;
+    private String clientId, username;
     private String serverIpAddress;
 
     // * UI PANELS
-    JPanel setupPanel;
+    JPanel setupPanel, connectPanel; // for user setup
 
-    public ClientApp(String clientId, String username, String ipAddress){
-        this.clientId = clientId;
-        this.serverIpAddress = ipAddress;
-
-        this.clientHandler = new ClientHandler(clientId,username,ipAddress);
-        this.clientHandler.startListening();
+    public ClientApp(File json){
+        // todo instantiate via json (clientId, username, ipAddress, pathOfMessageHistory)
     }
 
     public ClientApp(){
@@ -37,13 +42,14 @@ public class ClientApp extends JFrame {
         this.setTitle("Wifi Messenger Setup");
         this.setupPanel = new JPanel();
         this.setSize(DEFAULT_APP_SIZE);
+        this.setResizable(false);
 
         JPanel welcomeText = new JPanel();
         welcomeText.setLayout(new BoxLayout(welcomeText,BoxLayout.Y_AXIS));
-        welcomeText.setBorder(BorderFactory.createEmptyBorder(40,20,10,20));
+        welcomeText.setBorder(BorderFactory.createEmptyBorder(40,40,10,40));
 
             JLabel welcomeLbl = new JLabel("Welcome to Wifi Messenger");
-            welcomeLbl.setFont(new Font("Arial",Font.BOLD,20));
+            welcomeLbl.setFont(new Font("Arial", BOLD,20));
             welcomeText.add(welcomeLbl);
             welcomeLbl.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -66,34 +72,158 @@ public class ClientApp extends JFrame {
         this.setVisible(true);
     }
 
+    private void loadApp(){
+        // todo load client home
+    }
+
     private void userSetupPage(){
-        Font h1 = new Font("Arial",Font.BOLD,21);
-        setupPanel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        Font h1 = new Font("Arial", BOLD,21);
+        setupPanel.setBorder(BorderFactory.createEmptyBorder(20,40,40,40));
         setupPanel.setLayout(new BoxLayout(setupPanel,BoxLayout.Y_AXIS));
 
         JPanel header = new JPanel();
         header.setLayout(new FlowLayout(FlowLayout.LEFT));
+        header.setMaximumSize(new Dimension(Short.MAX_VALUE,40));
             JLabel headerLbl = new JLabel("App Setup");
             headerLbl.setFont(h1);
             header.add(headerLbl);
 
+        Dimension fieldRestrictions = new Dimension(Short.MAX_VALUE,30);
+
         JPanel ipAddress = new JPanel();
+        ipAddress.setMaximumSize(fieldRestrictions);
+        ipAddress.setLayout(new FlowLayout(FlowLayout.LEFT));
             JLabel ipAddressLabel = new JLabel("IP Address:");
             JTextField ipAddressField = new JTextField(15);
             ipAddress.add(ipAddressLabel);
             ipAddress.add(ipAddressField);
+            JButton useDefault = new JButton("Use Default");
+            useDefault.putClientProperty( "JButton.buttonType", "roundRect" );
+            useDefault.addActionListener(l->{
+                ipAddressField.setText(Server.SERVER_IP_ADDRESS);
+            });
+            ipAddress.add(useDefault);
 
         JPanel username = new JPanel();
-            JLabel usernameLabel = new JLabel("Username:");
+        username.setMaximumSize(fieldRestrictions);
+        username.setLayout(new FlowLayout(FlowLayout.LEFT));
+            JLabel usernameLabel = new JLabel("Username: ");
             JTextField usernameField = new JTextField(15);
             username.add(usernameLabel);
             username.add(usernameField);
 
-        // TODO add buttions and actionlisteners to complete setup
+        JPanel actionBar = new JPanel();
+        actionBar.setBorder(BorderFactory.createEmptyBorder(30,0,30,0));
+            JButton cancelSetupBtn = new JButton("Cancel Setup");
+            cancelSetupBtn.addActionListener(l->{
+                System.exit(1);
+            });
+            JButton connectBtn = new JButton("Go");
+            connectBtn.addActionListener(l->{
+                this.username = usernameField.getText();
+                this.serverIpAddress = ipAddressField.getText();
+                this.connectAfterSetup();
+            });
+            actionBar.add(cancelSetupBtn);
+            actionBar.add(connectBtn);
 
         setupPanel.add(header);
         setupPanel.add(ipAddress);
         setupPanel.add(username);
+        setupPanel.add(actionBar);
+    }
+
+    private void connectAfterSetup(){
+        connectPanel = new JPanel();
+        connectPanel.setBorder(BorderFactory.createEmptyBorder(100,40,50,20));
+        connectPanel.setLayout(new BoxLayout(connectPanel,BoxLayout.Y_AXIS));
+
+        ImageIcon loading = new ImageIcon("res/clientloadingsign.gif");
+        ImageIcon imageIcon = new ImageIcon(loading.getImage().getScaledInstance(50, 50, Image.SCALE_DEFAULT));
+        JLabel loadingLabel = new JLabel("",imageIcon,SwingConstants.CENTER);
+        connectPanel.add(loadingLabel,CENTER_ALIGNMENT);
+        JLabel statusLabel = new JLabel("Loading...");
+        statusLabel.setFont(new Font("Segoe UI",Font.PLAIN,25));
+        statusLabel.setForeground(new Color(65, 166, 227));
+        connectPanel.add(statusLabel,CENTER_ALIGNMENT);
+
+        this.add(connectPanel);
+        connectPanel.setVisible(true);
+        setupPanel.setVisible(false);
+
+        ExecutorService x = Executors.newCachedThreadPool();
+        Runnable load = ()->{
+            // * LOAD CLIENT
+            statusLabel.setText("Connecting to Server...");
+
+            sleep(1000);
+
+            try {
+                clientHandler = new ClientHandler((this.clientId = ClientHandler.createNewClientId()), username, serverIpAddress){
+                    @Override
+                    public void error(SocketException e){
+                        showError(e, "The connection to the server was lost.");
+                    }
+                };
+                statusLabel.setText("Starting Client Handler...");
+                sleep(1000);
+                clientHandler.startListening();
+                statusLabel.setText("Connected.");
+                loadingLabel.setVisible(false);
+                sleep(1000);
+                connectPanel.setVisible(false);
+                // todo create a directory for saved data
+                // todo save data via json (clientId, username, ipAddress, pathOfMessageHistory)
+                loadApp();
+            } catch (IOException e) {
+                connectPanel.setVisible(false);
+                setupPanel.setVisible(true);
+                clientHandlerInstantiationError(e);
+            }
+        };
+        x.submit(load);
+    }
+
+    private void clientHandlerInstantiationError(IOException e){
+        showError(e,"Connection error. Ensure you're connected to the internet " +
+                "and the server IP is correct, then try again.");
+    }
+
+    private void showError(Exception e, String message){
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        panel.setMaximumSize(new Dimension(100,100));
+
+        JLabel errorLabel = new JLabel(message);
+        JButton showDetails = new JButton("Show Error");
+        JLabel detailedError = new JLabel(e.getLocalizedMessage());
+        detailedError.setForeground(new Color(115, 0, 0));
+        detailedError.setVisible(false);
+
+        panel.add(errorLabel);
+        panel.add(showDetails);
+        panel.add(detailedError);
+        showDetails.addActionListener(l->{
+            showDetails.setVisible(false);
+            detailedError.setVisible(true);
+        });
+
+        // Show the dialog
+        JOptionPane.showMessageDialog(
+                null,
+                panel,
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+
+    private void sleep(long ms){
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // FOR DEV TESTING ONLY

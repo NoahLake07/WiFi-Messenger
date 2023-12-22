@@ -10,6 +10,8 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -112,6 +114,23 @@ public class ServerApp extends JFrame {
             panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             JLabel ipAddressLabel = new JLabel("Server IP Address: " + serverIpAddress);
+            ipAddressLabel.addMouseListener( new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if ( SwingUtilities.isRightMouseButton(e) ) {
+                        JPopupMenu menu = new JPopupMenu();
+                        JMenuItem itemRemove = new JMenuItem("Copy");
+                        itemRemove.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                                StringSelection selection = new StringSelection(serverIpAddress);
+                                clipboard.setContents(selection, null);
+                            }
+                        });
+                        menu.add(itemRemove);
+                        menu.show(ipAddressLabel, e.getPoint().x, e.getPoint().y);
+                    }
+                }
+            });
             JLabel versionLabel = new JLabel("App Version: " + versionNumber);
 
             panel.add(ipAddressLabel);
@@ -268,10 +287,12 @@ public class ServerApp extends JFrame {
         }
 
         public void removeClient(int index) {
-            server.closeClientConnection(clientsModel.get(index));
-            clientsModel.removeElementAt(index);
-            clientsConnected--;
-            updateLabel();
+            if(index!=-1) {
+                server.closeClientConnection(clientsModel.get(index));
+                clientsModel.removeElementAt(index);
+                clientsConnected--;
+                updateLabel();
+            }
         }
 
         public int getSelectedIndex() {
@@ -334,5 +355,10 @@ public class ServerApp extends JFrame {
             this.defaultColor = color;
         }
     }
+
+    public static void main(String[] args) {
+        new ServerApp(true);
+    }
+
 
 }

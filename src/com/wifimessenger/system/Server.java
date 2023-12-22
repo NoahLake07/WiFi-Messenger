@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    public static String SERVER_IP_ADDRESS = "ttServer"; // todo make this alterable
+    public static String SERVER_IP_ADDRESS = "0.0.0.0";
     public static int PORT = 8080;
 
     // * MESSAGE I/O
