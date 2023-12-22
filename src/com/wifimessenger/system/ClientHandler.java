@@ -111,7 +111,7 @@ public class ClientHandler {
     }
 
     public static void main(String[] args) {
-        new ClientHandler("id01","Bill B. Joe",Server.SERVER_IP_ADDRESS);
+        new ClientHandler("id02","Bill B. Joe",Server.SERVER_IP_ADDRESS);
     }
 
 }

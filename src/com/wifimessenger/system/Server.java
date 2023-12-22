@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    public static String SERVER_IP_ADDRESS = "192.168.7.168"; // todo make this alterable
+    public static String SERVER_IP_ADDRESS = "ttServer"; // todo make this alterable
     public static int PORT = 8080;
 
     // * MESSAGE I/O
@@ -52,7 +52,7 @@ public class Server {
      */
     public Server(int port, ClientMap clientMap){
         try {
-            serverSocket = new ServerSocket(PORT, 0, InetAddress.getByName("0.0.0.0"));
+            serverSocket = new ServerSocket(PORT);
             this.PORT = port;
             this.clientMap = clientMap;
             println("Server instantiated. "+serverSocket.toString());

@@ -158,7 +158,7 @@ public class ServerApp extends JFrame {
             throw new RuntimeException(e);
         }
 
-        server = new Server(DEFAULT_PORT){
+        server = new Server(){
             @Override
             public void newConnection(String id, String username){
                 println("New connection established.\n\t-> " + id + "  USERNAME: " + username);
