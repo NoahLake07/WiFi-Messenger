@@ -1,6 +1,4 @@
-package com.wifimessenger.system;
-
-import com.wifimessenger.system.data.MessageStatus;
+package com.wifimessenger.system.data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -14,19 +12,19 @@ public class Message implements Serializable {
     private String messageID;
     private MessageStatus status;
 
-    void setSenderID(String senderID){
+    public void setSenderID(String senderID){
         this.senderID = senderID;
     }
 
-    void setReceiverID(String receiverID){
+    public void setReceiverID(String receiverID){
         this.receiverID = receiverID;
     }
 
-    void setMessageContent(String messageContent){
+    public void setMessageContent(String messageContent){
         this.messageContent = messageContent;
     }
 
-    void setTimestamp(String timestamp){
+    public void setTimestamp(String timestamp){
         this.timestamp = timestamp;
     }
 
@@ -53,11 +51,11 @@ public class Message implements Serializable {
         this.timestamp = timestamp;
     }
 
-    void setMessageID(String messageID){
+    public void setMessageID(String messageID){
         this.messageID = messageID;
     }
 
-    void setStatus(MessageStatus status){
+    public void setStatus(MessageStatus status){
         this.status = status;
     }
 

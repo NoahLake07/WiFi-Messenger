@@ -1,13 +1,15 @@
 package com.wifimessenger.system;
 
+import com.wifimessenger.system.data.Message;
 import com.wifimessenger.system.data.MessageStatus;
 import com.wifimessenger.ui.ServerApp;
+import com.wifimessenger.ui.tools.AppSerializer;
 
 import java.awt.*;
 import java.io.*;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -74,15 +76,20 @@ public class Server {
         this.messageBox = mb;
     }
 
-    public void loadMessageBox(File mb) throws IOException, ClassNotFoundException {
-        FileInputStream fileInputStream
-                = new FileInputStream("yourfile.txt");
-        ObjectInputStream objectInputStream
-                = new ObjectInputStream(fileInputStream);
-        MessageBox loaded = (MessageBox) objectInputStream.readObject();
-        objectInputStream.close();
+    public void loadMessageBox(File mb) {
+        try {
+            loadMessageBox((MessageBox) new AppSerializer<>().load(mb.toPath()));
+        } catch (IOException | ClassNotFoundException e) {
+            println("Failed to load MessageBox: " + e.getMessage(), Color.RED);
+        }
+    }
 
-        loadMessageBox(loaded);
+    public void saveMessageBox(Path path){
+        try {
+            new AppSerializer<>().serialize(messageBox,path);
+        } catch (IOException e) {
+            println("Failed to save MessageBox: "+e.getMessage(),Color.RED);
+        }
     }
 
     public void startServer(){

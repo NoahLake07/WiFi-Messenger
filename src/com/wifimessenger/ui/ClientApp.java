@@ -3,6 +3,8 @@ package com.wifimessenger.ui;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
+import com.wifimessenger.ui.tools.FontGallery;
+import com.wifimessenger.ui.tools.UIResource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,7 +20,8 @@ import static java.awt.Font.BOLD;
 public class ClientApp extends JFrame {
 
     // * CONSTANTS
-    public static Dimension DEFAULT_APP_SIZE = new Dimension(600,400);
+    public static Dimension SETUP_WINDOW_SIZE = new Dimension(450,300);
+    public static FontGallery fonts = new FontGallery();
 
     // * Local Objects
     ClientHandler clientHandler;
@@ -41,20 +44,21 @@ public class ClientApp extends JFrame {
 
         this.setTitle("Wifi Messenger Setup");
         this.setupPanel = new JPanel();
-        this.setSize(DEFAULT_APP_SIZE);
+        this.setSize(SETUP_WINDOW_SIZE);
         this.setResizable(false);
+        this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         JPanel welcomeText = new JPanel();
         welcomeText.setLayout(new BoxLayout(welcomeText,BoxLayout.Y_AXIS));
         welcomeText.setBorder(BorderFactory.createEmptyBorder(40,40,10,40));
 
             JLabel welcomeLbl = new JLabel("Welcome to Wifi Messenger");
-            welcomeLbl.setFont(new Font("Arial", BOLD,20));
+            welcomeLbl.setFont(FontGallery.getFont("rubik-regular",BOLD,25));
             welcomeText.add(welcomeLbl);
             welcomeLbl.setHorizontalAlignment(SwingConstants.CENTER);
 
-            JLabel actionLbl = new JLabel("Welcome to Wifi Messenger");
-            actionLbl.setFont(new Font("Arial",Font.PLAIN,12));
+            JLabel actionLbl = new JLabel("Click the button below to get started.");
+            actionLbl.setFont(FontGallery.getFont("rubik-light ", BOLD,15));
             actionLbl.setHorizontalAlignment(SwingConstants.CENTER);
             welcomeText.add(actionLbl);
 
@@ -77,7 +81,7 @@ public class ClientApp extends JFrame {
     }
 
     private void userSetupPage(){
-        Font h1 = new Font("Arial", BOLD,21);
+        Font h1 = FontGallery.getFont("rubik-regular",BOLD,20);
         setupPanel.setBorder(BorderFactory.createEmptyBorder(20,40,40,40));
         setupPanel.setLayout(new BoxLayout(setupPanel,BoxLayout.Y_AXIS));
 
@@ -138,10 +142,11 @@ public class ClientApp extends JFrame {
         connectPanel.setBorder(BorderFactory.createEmptyBorder(100,40,50,20));
         connectPanel.setLayout(new BoxLayout(connectPanel,BoxLayout.Y_AXIS));
 
-        ImageIcon loading = new ImageIcon("res/clientloadingsign.gif");
+        File loadSignFile = UIResource.getFileFromResource("clientloadingsign.gif");
+        ImageIcon loading = new ImageIcon(String.valueOf(loadSignFile));
         ImageIcon imageIcon = new ImageIcon(loading.getImage().getScaledInstance(50, 50, Image.SCALE_DEFAULT));
-        JLabel loadingLabel = new JLabel("",imageIcon,SwingConstants.CENTER);
-        connectPanel.add(loadingLabel,CENTER_ALIGNMENT);
+        JLabel loadingIcon = new JLabel("",imageIcon,SwingConstants.CENTER);
+        connectPanel.add(loadingIcon,CENTER_ALIGNMENT);
         JLabel statusLabel = new JLabel("Loading...");
         statusLabel.setFont(new Font("Segoe UI",Font.PLAIN,25));
         statusLabel.setForeground(new Color(65, 166, 227));
@@ -168,12 +173,15 @@ public class ClientApp extends JFrame {
                 statusLabel.setText("Starting Client Handler...");
                 sleep(1000);
                 clientHandler.startListening();
-                statusLabel.setText("Connected.");
-                loadingLabel.setVisible(false);
                 sleep(1000);
-                connectPanel.setVisible(false);
+                statusLabel.setText("Creating sources...");
+
                 // todo create a directory for saved data
                 // todo save data via json (clientId, username, ipAddress, pathOfMessageHistory)
+
+                loadingIcon.setVisible(false);
+                sleep(1000);
+                connectPanel.setVisible(false);
                 loadApp();
             } catch (IOException e) {
                 connectPanel.setVisible(false);
