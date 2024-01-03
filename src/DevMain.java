@@ -1,5 +1,8 @@
 import com.wifimessenger.system.ClientHandler;
 import com.wifimessenger.system.Server;
+import com.wifimessenger.system.data.Conversation;
+import com.wifimessenger.system.data.Message;
+import com.wifimessenger.ui.ClientApp.ConversationPanel;
 import com.wifimessenger.ui.ClientApp.ProfileIcon;
 import com.wifimessenger.ui.ClientApp;
 import com.wifimessenger.ui.ServerApp;
@@ -7,6 +10,7 @@ import com.wifimessenger.ui.ServerApp;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class DevMain {
 
@@ -72,8 +76,94 @@ public class DevMain {
         frame.setVisible(true);
     }
 
+    public void testConversationPanel(){
+        // * INSTANTIATE TEST CONVERSATIONS
+        ArrayList<Conversation> conversations = new ArrayList<>();
+        conversations.add(buildConversationA());
+        conversations.add(buildConversationB());
+
+        // * INSTANTIATE UI
+        JFrame frame = new JFrame();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel.setBorder(BorderFactory.createEmptyBorder(40,40,40,40));
+
+        ClientApp cA = new ClientApp();
+        cA.overrideClientId("mySenderId01");
+        cA.setTestInstance(true);
+        cA.setVisible(false);
+        ConversationPanel cP = cA.getInstanceOfConversationPanel(conversations);
+
+        panel.add(cP);
+        panel.setMaximumSize(new Dimension(600,600));
+        frame.setSize(600,600);
+        frame.add(panel);
+
+        frame.setVisible(true);
+    }
+
+    public void testConversationTile(){
+        // * INSTANTIATE TEST CONVERSATIONS
+        Conversation c = buildConversationA();
+
+        // * INSTANTIATE UI
+        JFrame frame = new JFrame();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel.setBorder(BorderFactory.createEmptyBorder(40,40,40,40));
+
+        ClientApp cA = new ClientApp();
+        cA.overrideClientId("mySenderId01");
+        cA.setTestInstance(true);
+        cA.setVisible(false);
+        ClientApp.ConversationTile cT = cA.getTestTile(c);
+
+        panel.add(cT);
+        panel.setMaximumSize(new Dimension(600,600));
+        frame.setSize(600,600);
+        frame.add(panel);
+
+        frame.setVisible(true);
+    }
+
+    public Message buildMessage(String senderID,String receiverID, String messageContent, String messageID){
+        Message m = new Message();
+        m.setSenderID(senderID);
+        m.setReceiverID(receiverID);
+        m.setMessageContent(messageContent);
+        m.setTimestamp();
+        m.setMessageID(messageID);
+        return m;
+    }
+
+    public Conversation buildConversationA(){
+        String foreignSenderId = "fsi01";
+        String localSenderId = "mySenderId01";
+        Conversation c = new Conversation();
+        Message m1 = buildMessage(localSenderId,foreignSenderId,"This is message A.","m1a");
+        Message m2 = buildMessage(foreignSenderId,localSenderId,"This is message B.","m2a");
+        Message m3 = buildMessage(localSenderId,foreignSenderId,"This is message C.","m3a");
+
+        c.add(m1);
+        c.add(m2);
+        c.add(m3);
+        return c;
+    }
+
+    public Conversation buildConversationB(){
+        String foreignSenderId = "fsi02";
+        String localSenderId = "mySenderId01";
+        Conversation c = new Conversation();
+        Message m1 = buildMessage(localSenderId,foreignSenderId,"This is message A.","m1b");
+        Message m2 = buildMessage(foreignSenderId,localSenderId,"This is message B.","m2b");
+        Message m3 = buildMessage(localSenderId,foreignSenderId,"This is message C.","m3b");
+
+        c.add(m1);
+        c.add(m2);
+        c.add(m3);
+        return c;
+    }
+
     public static void main(String[] args) {
-        new DevMain().testProfileIcon();
+        new DevMain().testConversationPanel();
     }
 
 }
