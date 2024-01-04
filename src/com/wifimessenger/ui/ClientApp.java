@@ -10,6 +10,7 @@ import com.wifimessenger.ui.tools.UIResource;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -320,20 +321,24 @@ public class ClientApp extends JFrame {
         private JScrollPane scrollPane;
         private JButton newConversationBtn;
 
-        public ConversationPanel(ArrayList<Conversation> conversations){
-            this.setLayout(new BoxLayout(this,BoxLayout.Y_AXIS));
+        public ConversationPanel(ArrayList<Conversation> conversations) {
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            conversationSelector = new JPanel();
+            conversationSelector.setLayout(new BoxLayout(conversationSelector, BoxLayout.Y_AXIS));
             this.conversations = conversations;
+            this.conversationSelector = new JPanel();
+            this.conversationSelector.setLayout(new BoxLayout(this.conversationSelector,BoxLayout.Y_AXIS));
             scrollPane = new JScrollPane(conversationSelector);
-            scrollPane.putClientProperty( "ScrollBar.thumbArc", 999 );
-            scrollPane.putClientProperty( "ScrollBar.thumbInsets", new Insets( 2, 2, 2, 2 ) );
+            scrollPane.putClientProperty("ScrollBar.thumbArc", 999);
+            scrollPane.putClientProperty("ScrollBar.thumbInsets", new Insets(2, 2, 2, 2));
 
             newConversationBtn = new JButton("New Conversation");
-            newConversationBtn.putClientProperty( "JButton.buttonType", "roundRect" );
-            newConversationBtn.setMaximumSize(new Dimension(Short.MAX_VALUE,100));
+            newConversationBtn.putClientProperty("JButton.buttonType", "roundRect");
+            newConversationBtn.setMaximumSize(new Dimension(Short.MAX_VALUE, 100));
 
             label = new JLabel("Conversations");
-            label.setFont(new Font("Arial", BOLD,21));
-            label.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+            label.setFont(new Font("Arial", BOLD, 21));
+            label.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 0));
             label.setHorizontalAlignment(SwingConstants.CENTER);
 
             add(label);
@@ -343,18 +348,15 @@ public class ClientApp extends JFrame {
             updatePanel();
         }
 
-        public void updatePanel(){
-            conversationSelector = new JPanel();
-            conversationSelector.setLayout(new BoxLayout(conversationSelector,BoxLayout.Y_AXIS));
+        public void updatePanel() {
 
-            for(Conversation conversation : conversations) {
+            for (Conversation conversation : conversations) {
                 ConversationTile cTile = new ConversationTile(conversation);
                 conversationSelector.add(cTile);
             }
+            repaint();
         }
     }
-
-    //todo test conversation panel with existing conversation parameters
 
     public ConversationTile getTestTile() {
         return new ConversationTile("Foreign Client", "This was the last message sent in this conversation.");
@@ -367,31 +369,17 @@ public class ClientApp extends JFrame {
         ProfileIcon icon;
         Conversation c;
 
-        public final static Color TILE_BACKGROUND = new Color(187, 187, 187);
+        public final static Color TILE_BACKGROUND = new Color(219, 230, 234);
+        public final static Dimension MAXIMUM_SIZE = new Dimension(Short.MAX_VALUE,100);
+        public final static Border BORDER = BorderFactory.createEmptyBorder(20, 20, 20, 20);
 
         public ConversationTile(Conversation con) {
             super(new FlowLayout(FlowLayout.LEFT));
-            this.setMaximumSize(new Dimension(200, 70));
-            this.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+            this.setMaximumSize(MAXIMUM_SIZE);
+            this.setBorder(BORDER);
             this.setBackground(TILE_BACKGROUND);
 
-            String foreignClientId = con.getOppositeClientId(clientId);
-            String foreignClientName = getClientNameFromServer(foreignClientId);
-            icon = new ProfileIcon(foreignClientName);
-            add(icon);
-
-            text = new JPanel();
-            text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
-
-            name = new JLabel(foreignClientName);
-            name.setFont(new Font("Arial", Font.BOLD, 12));
-            lastMsg = new JLabel(con.getLastMessageContent());
-            lastMsg.setFont(new Font("Arial", Font.PLAIN, 9));
-            lastMsg.setForeground(new Color(61, 61, 61));
-
-            text.add(name);
-            text.add(lastMsg);
-            add(text);
+            instantiateContents(getClientNameFromServer(con.getOppositeClientId(clientId)),con.getLastMessage().toString());
 
             this.addMouseListener(new MouseAdapter() {
                 @Override
@@ -400,26 +388,31 @@ public class ClientApp extends JFrame {
                     openConversation(c);
                 }
             });
-
-            this.putClientProperty( FlatClientProperties.STYLE, "arc: 8" );
         }
 
         public ConversationTile(String foreignClientName, String lastMsgContent) {
             super(new FlowLayout(FlowLayout.LEFT));
-            this.setMaximumSize(new Dimension(Short.MAX_VALUE, 100));
-            this.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+            this.setMaximumSize(MAXIMUM_SIZE);
+            this.setBorder(BORDER);
             this.setBackground(TILE_BACKGROUND);
 
+            instantiateContents(foreignClientName,lastMsgContent);
+        }
+
+        private void instantiateContents(String foreignId, String lastMsgContent){
+            String foreignClientName = getClientNameFromServer(foreignId);
             icon = new ProfileIcon(foreignClientName);
             add(icon);
 
             text = new JPanel();
+            text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
             text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
             text.setOpaque(false);
 
             name = new JLabel(foreignClientName);
             name.setFont(new Font("Arial", Font.BOLD, 12));
             name.setOpaque(false);
+
             lastMsg = new JLabel(lastMsgContent);
             lastMsg.setFont(new Font("Arial", Font.PLAIN, 9));
             lastMsg.setForeground(new Color(61, 61, 61));

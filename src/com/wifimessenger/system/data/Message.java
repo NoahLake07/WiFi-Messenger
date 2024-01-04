@@ -71,6 +71,11 @@ public class Message implements Serializable {
         return this.messageContent;
     }
 
+    @Override
+    public String toString(){
+        return this.getMessageContent();
+    }
+
     public String getTimestamp(){
         return this.timestamp;
     }

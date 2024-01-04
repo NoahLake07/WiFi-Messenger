@@ -114,7 +114,7 @@ public class DevMain {
         cA.overrideClientId("mySenderId01");
         cA.setTestInstance(true);
         cA.setVisible(false);
-        ClientApp.ConversationTile cT = cA.getTestTile(c);
+        ClientApp.ConversationTile cT = cA.getTestTile();
 
         panel.add(cT);
         panel.setMaximumSize(new Dimension(600,600));
@@ -163,7 +163,7 @@ public class DevMain {
     }
 
     public static void main(String[] args) {
-        new DevMain().testConversationPanel();
+        new DevMain().runServer();
     }
 
 }

@@ -19,7 +19,7 @@ public class SimpleServer {
         while (true) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Client connected: " + clientSocket.getInetAddress());\
+                System.out.println("Client connected: " + clientSocket.getInetAddress());
 
                 // Handle client connection (add code here to read/write to the client)
             } catch (IOException e) {
